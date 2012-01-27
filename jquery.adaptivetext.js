@@ -33,7 +33,7 @@
 
     $.fn.adaptiveText = function(options, debug) {
 
-        var settings = [],
+        var settings = {},
             isSingle = false,
             isReset = false,
             isNotFound = false,
@@ -41,6 +41,7 @@
             negativeInfinity = Number.NEGATIVE_INFINITY,
             intRegex = /^\d+$/,
             floatRegex = /^((\d+(\.\d *)?)|((\d*\.)?\d+))$/,
+            thisUUID,
 
 
             isCurrentWidth = function(max, min) {
@@ -59,12 +60,17 @@
             //http://stackoverflow.com/a/8809472
             generateUUID = function(){
 			    var d = new Date().getTime();
-			    var uuid = 'adaptiveText-xxxxx'.replace(/[xy]/g, function(c) {
+			    var uuid = 'adaptive-xxxxx'.replace(/[xy]/g, function(c) {
 			        var r = (d + Math.random()*16)%16 | 0;
 			        d = d/16 | 0;
 			        return (c=='x' ? r : (r&0x7|0x8)).toString(16);
 			    });
-			    return uuid;
+			    if ($('.' + uuid).lenght) {
+            		console.log('MOTHEREFFING COLLISION!!!');
+            		generateUUID();
+            	} else {
+            		return uuid;
+            	}
 			},
 
             isset = function(a) {
@@ -85,26 +91,33 @@
 
             // Resize items based on the object width divided by the compressor * 10
             resize = function(elem, obj) {
+                if (!thisUUID) {
+                	thisUUID = generateUUID();
+                }
+                elem.addClass(thisUUID);
+                $('.' + thisUUID).css('font-size', Math.max(Math.min(elem.width() / (obj.compressor * 10), parseFloat(obj.maxFontSize)), parseFloat(obj.minFontSize)));
                 debugMessage('RESIZE');
-                elem.css('font-size', Math.max(Math.min(elem.width() / (obj.compressor * 10), parseFloat(obj.maxFontSize)), parseFloat(obj.minFontSize)));
+            },
+            
+            
+            defaults = {
+            	'compressor': 1,
+            	'minWidth': negativeInfinity,
+            	'maxWidth': positiveInfinity,
+            	'minFontSize': negativeInfinity,
+            	'maxFontSize': positiveInfinity
             },
 
 
             setValues = function(readfrom) {
-                settings.compressor =
-                readfrom.compressor || 1;
-
-                settings.minWidth =
-                readfrom.minWidth || negativeInfinity;
-
-                settings.maxWidth =
-                readfrom.maxWidth || positiveInfinity;
-
-                settings.minFontSize =
-                readfrom.minFontSize || negativeInfinity;
-
-                settings.maxFontSize =
-                readfrom.maxFontSize || positiveInfinity;
+                settings = {};
+                
+                $.extend(true, settings, defaults);
+                
+                for (var i in readfrom) {
+                	settings[i] = readfrom[i];
+                }
+                
                 debugMessage(['SET VALUES', settings]);
             },
 
@@ -121,7 +134,7 @@
                 }
 
                 // Was called without options
-                if (!options) {
+                else if (!options) {
                     debugMessage('NO SETTINGS');
                     // Empty array will do the trick
                     setValues([]);
@@ -149,10 +162,9 @@
                             return true;
                         }
 
-                        // Multiple values
                         else {
-                            debugMessage('SET MULTIPLE');
                             setValues(this);
+                            
                             if (isCurrentWidth(settings.maxWidth, settings.minWidth)) {
                                 debugMessage('FOUND!');
                                 isNotFound = false;
@@ -160,15 +172,13 @@
                                 return false;
                             }
 
-                            // Keep searching
+                            // Multiple values, Keep searching
                             else {
                                 // If it is the last item, we set to default
                                 if (i == options.length - 1) {
                                     debugMessage('NOT FOUND');
                                     isNotFound = true;
-                                    // Empty array will do the trick
-                                    setValues([]);
-                                    resize(elem, settings);
+                                    elem.removeClass(thisUUID).removeAttr('style');
                                     return false;
                                 }
                                 else {
@@ -177,13 +187,7 @@
                                 }
                             }
                         }
-
-                        // Reset single to cached width
-                        if (isSingle === true && isReset === false) {
-                            debugMessage('SINGLE RESET');
-                            isReset = true;
-                            return false;
-                        }
+                        
                     });
                 }
             },
@@ -193,7 +197,7 @@
 
                 // Set and resize once.
                 debugMessage('SET ONCE');
-                setAndResize(elem, true);
+                setAndResize(elem);
 
                 // Then keep resizing
                 $(window).resize(function() {
@@ -216,6 +220,7 @@
                         // Settings width is not the current width
                         else {
                             debugMessage('NOT CURRENT WIDTH', settings.maxWidth, settings.minWidth, window.innerWidth, isReset);
+                            elem.removeClass(thisUUID).removeAttr('style');
                             setAndResize(elem);
                         }
                     }
