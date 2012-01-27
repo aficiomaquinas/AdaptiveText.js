@@ -1,4 +1,4 @@
-Did you ever wished you had FitText.js with mediaqueries?
+Did you ever wished you had http://fittextjs.com/ with mediaqueries?
 
 Of course there are solutions to test real media queries with javascript, https://github.com/paulirish/matchMedia.js/
 but testing them out tens or hundreds of times while we resize is damn slow and not a good thing to do.
