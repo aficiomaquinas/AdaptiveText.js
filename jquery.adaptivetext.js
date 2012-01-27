@@ -35,17 +35,24 @@
 
         var settings = {},
             isSingle = false,
-            isReset = false,
             isNotFound = false,
             positiveInfinity = Number.POSITIVE_INFINITY,
             negativeInfinity = Number.NEGATIVE_INFINITY,
             intRegex = /^\d+$/,
             floatRegex = /^((\d+(\.\d *)?)|((\d*\.)?\d+))$/,
             thisUUID,
+            
+            defaults = {
+                'compressor': 1,
+                'minWidth': negativeInfinity,
+                'maxWidth': positiveInfinity,
+                'minFontSize': negativeInfinity,
+                'maxFontSize': positiveInfinity
+            },
 
 
             isCurrentWidth = function(max, min) {
-                if ($(window).width() <= max && $(window).width() >= min) {
+                if ($(window).width() <= parseFloat(max) && $(window).width() >= parseFloat(min)) {
                     return true;
                 } else {
                     return false;
@@ -73,9 +80,11 @@
                 }
             },
             
+            
             reset = function(elem) {
             	elem.removeClass(thisUUID).removeAttr('style');
             },
+
 
             isset = function(a) {
                 if (typeof a !== "undefined" && a !== null) {
@@ -103,24 +112,26 @@
                 debugMessage('RESIZE');
             },
 
-
-            defaults = {
-                'compressor': 1,
-                'minWidth': negativeInfinity,
-                'maxWidth': positiveInfinity,
-                'minFontSize': negativeInfinity,
-                'maxFontSize': positiveInfinity
-            },
-
-
+            
+            // Duplicate defaults and then overwrite with the user values
             setValues = function(readfrom) {
                 settings = {};
                 $.extend(true, settings, defaults);
-
                 for (var i in readfrom) {
                     settings[i] = readfrom[i];
                 }
                 debugMessage(['SET VALUES', settings]);
+            },
+            
+            
+            // We need to deliver an array, if it is an object, $.each will not work
+            workingArray = function(a) {
+                if ($.isArray(a)) {
+                	return a;
+                }
+                else if (typeof a == 'object'){
+                	return [a];
+                }
             },
 
 
@@ -142,10 +153,10 @@
                     setValues([]);
                     resize(elem, settings);
                 }
-
+                
                 // Called with options
                 else {
-                    $.each(options, function(i) {
+                    $.each(workingArray(options), function(i) {
                         // Set values for all multiples and first single only
                         if (isSingle === true) {
                             debugMessage('FIRST SINGLE');
@@ -198,7 +209,6 @@
             keepFixing = function(elem) {
 
                 // Set and resize once.
-                debugMessage('SET ONCE');
                 setAndResize(elem);
 
                 // Then keep resizing
@@ -220,7 +230,7 @@
 
                         // Settings width is not the current width
                         else {
-                            debugMessage('NOT CURRENT WIDTH', settings.maxWidth, settings.minWidth, window.innerWidth, isReset);
+                            debugMessage('NOT CURRENT WIDTH', settings.maxWidth, settings.minWidth, window.innerWidth);
                             reset(elem);
                             setAndResize(elem);
                         }
